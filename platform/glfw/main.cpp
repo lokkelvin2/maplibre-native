@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
 
     map.getStyle().loadURL(style);
 
-    view->run();
+    view->run(); // Runs map view and imgui
 
     // Save settings
     mbgl::CameraOptions camera = map.getCameraOptions();

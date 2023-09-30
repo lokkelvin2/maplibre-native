@@ -4,6 +4,10 @@
 #include "ny_route.hpp"
 #include "test_writer.hpp"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include <mbgl/annotation/annotation.hpp>
 #include <mbgl/gfx/backend.hpp>
 #include <mbgl/gfx/backend_scope.hpp>
@@ -176,7 +180,7 @@ GLFWView::GLFWView(bool fullscreen_,
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     glfwWindowHint(GLFW_DEPTH_BITS, 16);
 
-    window = glfwCreateWindow(width, height, "Mapbox GL", monitor, nullptr);
+    window = glfwCreateWindow(width, height, "Maplibre-Native+Dear ImGui GLFW+OpenGL3 example", monitor, nullptr);
     if (!window) {
         glfwTerminate();
         mbgl::Log::Error(mbgl::Event::OpenGL, "failed to initialize window");
@@ -198,7 +202,26 @@ GLFWView::GLFWView(bool fullscreen_,
 
     pixelRatio = static_cast<float>(backend->getSize().width) / width;
 
-    glfwMakeContextCurrent(nullptr);
+    glfwMakeContextCurrent(window);
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    // // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    // //ImGui::StyleColorsLight();
+
+    // // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    const char* glsl_version = "#version 100";
+    ImGui_ImplOpenGL3_Init(glsl_version);
+    //ImGui_ImplOpenGL3_Init(nullptr); // Unsure which glsl version to pick so we use nullptr
+
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    
 
     printf("\n");
     printf(
@@ -260,6 +283,9 @@ GLFWView::GLFWView(bool fullscreen_,
 }
 
 GLFWView::~GLFWView() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwDestroyWindow(window);
     glfwTerminate();
 }
@@ -338,11 +364,11 @@ void GLFWView::onKey(GLFWwindow *window, int key, int /*scancode*/, int action, 
                 // XXX Fix precision loss in flyTo:
                 // https://github.com/mapbox/mapbox-gl-native/issues/4298
                 static const std::vector<mbgl::LatLng> places = {
-                    mbgl::LatLng{-16.796665, -179.999983}, // Dateline monument
-                    mbgl::LatLng{12.9810542, 77.6345551},  // Mapbox Bengaluru, India
-                    mbgl::LatLng{-13.15607, -74.21773},    // Mapbox Peru
-                    mbgl::LatLng{37.77572, -122.4158818},  // Mapbox SF, USA
-                    mbgl::LatLng{38.91318, -77.03255},     // Mapbox DC, USA
+                    mbgl::LatLng{1.294267 , 103.7831941}, // NUH
+                    mbgl::LatLng{1.286854 , 103.801266},  // Alexandra Hospital
+                    mbgl::LatLng{1.279622 , 103.836086},  // SGH
+                    mbgl::LatLng{1.321349 , 103.847089},  // Tan Tock Seng Hospital
+                    mbgl::LatLng{1.340235 , 103.949712},  // CGH
                 };
                 static size_t nextPlace = 0;
                 mbgl::CameraOptions cameraOptions;
@@ -435,7 +461,7 @@ void GLFWView::onKey(GLFWwindow *window, int key, int /*scancode*/, int action, 
                 auto &style = view->map->getStyle();
                 if (!style.getSource("states")) {
                     std::string url =
-                        "https://maplibre.org/maplibre-gl-js-docs/assets/"
+                        "https://raw.githubusercontent.com/mapbox/mapboxgl-jupyter/master/examples/data/"
                         "us_states.geojson";
                     auto source = std::make_unique<GeoJSONSource>("states");
                     source->setURL(url);
@@ -956,6 +982,13 @@ void GLFWView::run() {
         }
 
         glfwPollEvents();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        // Start the Dear ImGui frame
+
+        bool show_demo_window = true;
+        ImGui::ShowDemoWindow(&show_demo_window);
 
         if (dirty && rendererFrontend) {
             dirty = false;

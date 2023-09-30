@@ -5,6 +5,10 @@
 
 #include <GLFW/glfw3.h>
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 class GLFWGLRenderableResource final : public mbgl::gl::RenderableResource {
 public:
     explicit GLFWGLRenderableResource(GLFWGLBackend& backend_)
@@ -69,6 +73,8 @@ void GLFWGLBackend::setSize(const mbgl::Size newSize) {
 }
 
 void GLFWGLBackend::swap() {
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
 }
 
